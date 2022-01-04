@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "strict": true,
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "lib",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "node_modules/*"]
+    },
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "downlevelIteration": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
+}
