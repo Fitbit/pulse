@@ -121,9 +121,10 @@ export default class ControlProtocol extends EventEmitter {
           const { source, dest, before, after } = transition;
           if (ensureArray(source).includes(this.state)) {
             if (before)
-              before.forEach(cb => this.handleEventCallback(cb, args));
+              before.forEach((cb) => this.handleEventCallback(cb, args));
             this.state = dest;
-            if (after) after.forEach(cb => this.handleEventCallback(cb, args));
+            if (after)
+              after.forEach((cb) => this.handleEventCallback(cb, args));
             this.maybeStopRestartTimer();
             break;
           }
