@@ -1,11 +1,16 @@
 import EventEmitter from 'events';
 import Interface from './Interface';
-import Transport, { TransportConstructor } from './transports';
+import Transport, {
+  BestEffortTransport,
+  TransportConstructor,
+} from './transports';
 import { SocketLike } from './Socket';
 
 export default class Link extends EventEmitter {
   private static availableTransports: { [name: string]: TransportConstructor } =
-    {};
+    {
+      bestEffort: BestEffortTransport,
+    };
 
   public closed = false;
   private transports: { [name: string]: Transport } = {};

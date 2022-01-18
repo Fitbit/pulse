@@ -12,3 +12,5 @@ export default interface Transport {
 export interface TransportConstructor {
   new (intf: Interface, mtu: number): Transport;
 }
+
+export { default as BestEffortTransport } from './BestEffortTransport';

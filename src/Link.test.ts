@@ -6,6 +6,7 @@ import Transport, { TransportConstructor } from './transports';
 import { SocketLike } from './Socket';
 
 jest.mock('./Interface');
+jest.mock('./transports/BestEffortTransport');
 
 let intf: Interface;
 let link: Link;
