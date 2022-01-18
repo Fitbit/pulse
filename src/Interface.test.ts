@@ -3,6 +3,8 @@ import * as stream from 'stream';
 import Interface from './Interface';
 import { encode as encodeFrame } from './framing/encoder';
 import PPPFrame from './ppp/PPPFrame';
+import LCPEncapsulation from './ppp/LCPEncapsulation';
+import { ControlCode } from './ppp/ControlProtocol';
 import { encode } from './encodingUtil';
 
 let intf: Interface;
@@ -33,6 +35,18 @@ class BufferSink extends stream.Duplex {
   waitForClose(): Promise<void> {
     return new Promise((resolve) => sink.once('close', () => resolve()));
   }
+}
+
+function fakeLCPUp(): void {
+  // eslint-disable-next-line
+  (intf as any).onLinkUp();
+  // eslint-disable-next-line
+  (intf as any).handlePingSuccess();
+}
+
+function fakeLCPDown(): void {
+  // eslint-disable-next-line
+  (intf as any).onLinkDown();
 }
 
 beforeEach(() => {
@@ -73,11 +87,13 @@ it('receives a packet', async () => {
   expect(packetHandler).toBeCalledWith(encode('hello world!'));
 });
 
-it('closing interface closes sockets and underlying stream', () => {
+it('closing interface closes sockets and underlying stream', async () => {
   const socketA = intf.connect(0xf0f1);
   const socketB = intf.connect(0xf0f3);
 
-  intf.close();
+  const closePromise = intf.close();
+  jest.runAllTimers();
+  await closePromise;
 
   expect(socketA.closed).toEqual(true);
   expect(socketB.closed).toEqual(true);
@@ -109,8 +125,10 @@ it('closing one socket allows another to be opened for the same protocol', () =>
   expect(socketA).not.toBe(socketB);
 });
 
-it('throws if sending on a closed interface', () => {
-  intf.close();
+it('throws if sending on a closed interface', async () => {
+  const closePromise = intf.close();
+  jest.runAllTimers();
+  await closePromise;
 
   expect(intf.closed).toEqual(true);
   expect(() => intf.sendPacket(0x8889, Buffer.from('data'))).toThrowError(
@@ -120,4 +138,63 @@ it('throws if sending on a closed interface', () => {
 
 it('ignores corrupted PPP frames', () => {
   expect(() => intf.write(encode('?'))).not.toThrowError();
+});
+
+describe('getLink()', () => {
+  describe('rejects', () => {
+    it('if LCP is down', () => {
+      const linkPromise = intf.getLink(0);
+      jest.runAllTimers();
+      return expect(linkPromise).rejects.toThrowError('Timed out getting link');
+    });
+
+    it('if interface is closed', async () => {
+      const closePromise = intf.close();
+      jest.runAllTimers();
+      await closePromise;
+      return expect(intf.getLink(0)).rejects.toThrowError(
+        'No link available on closed interface',
+      );
+    });
+  });
+
+  it('returns a link when LCP is up', () => {
+    const linkPromise = intf.getLink();
+    fakeLCPUp();
+    return expect(linkPromise).resolves.toBeDefined();
+  });
+
+  it('closes link object when LCP goes down', async () => {
+    const linkPromise = intf.getLink();
+    fakeLCPUp();
+    const link = await linkPromise;
+    expect(link.closed).toEqual(false);
+    fakeLCPDown();
+    expect(link.closed).toEqual(true);
+  });
+
+  it('doesn\t reopen the previous link object if LCP bounces', async () => {
+    fakeLCPUp();
+    const linkA = await intf.getLink();
+    fakeLCPDown();
+    fakeLCPUp();
+    const linkB = await intf.getLink();
+    expect(linkA.closed).toEqual(true);
+    expect(linkB.closed).toEqual(false);
+    expect(linkA).not.toBe(linkB);
+  });
+
+  it('shuts down LCP when closing gracefully', () => {
+    void intf.close();
+    return expect(sink.getData()).resolves.toContainEqual(
+      encodeFrame(
+        PPPFrame.build(
+          0xc021,
+          LCPEncapsulation.build(ControlCode.TerminateRequest, 42),
+        ),
+      ),
+    );
+  });
+
+  // TODO: check ping failure triggers LCP restart
 });
