@@ -9,10 +9,11 @@ import Event from './util/event';
 import { FrameDecoder } from './framing/decoder';
 import { FrameEncoder } from './framing/encoder';
 import { FrameSplitter } from './framing/splitter';
+import PcapWriter, { PcapPacketDirection } from './PcapWriter';
 
 export default class Interface extends stream.Duplex {
-  static create(phy: stream.Duplex): Interface {
-    const intf = new Interface();
+  static create(phy: stream.Duplex, pcapPath?: string): Interface {
+    const intf = new Interface(pcapPath);
     const splitter = new FrameSplitter();
     const decoder = new FrameDecoder();
     const encoder = new FrameEncoder();
@@ -24,8 +25,12 @@ export default class Interface extends stream.Duplex {
     return intf;
   }
 
-  constructor() {
+  constructor(pcapPath?: string) {
     super({ objectMode: true, allowHalfOpen: false });
+
+    if (pcapPath) {
+      this.pcapWriter = new PcapWriter(pcapPath, PcapWriter.linkTypePPPWithDir);
+    }
 
     this.lcp.addListener('linkUp', this.onLinkUp.bind(this));
     this.lcp.addListener('linkDown', this.onLinkDown.bind(this));
@@ -41,11 +46,16 @@ export default class Interface extends stream.Duplex {
   private lcp = new LinkControlProtocol(this);
   private link?: Link;
   private linkAvailable = new Event();
+  private pcapWriter?: PcapWriter;
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   _read(): void {}
 
   _write(chunk: Buffer, _: string, callback: (err?: Error) => void): void {
+    if (this.pcapWriter) {
+      this.pcapWriter.writePacket(PcapPacketDirection.IN, chunk);
+    }
+
     let frame: PPPFrame;
     try {
       frame = PPPFrame.parse(chunk);
@@ -100,6 +110,9 @@ export default class Interface extends stream.Duplex {
       )}`,
     );
     const datagram = PPPFrame.build(protocol, packet);
+    if (this.pcapWriter) {
+      this.pcapWriter.writePacket(PcapPacketDirection.OUT, datagram);
+    }
     this.push(datagram);
   }
 

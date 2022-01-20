@@ -6,6 +6,9 @@ import PPPFrame from './ppp/PPPFrame';
 import LCPEncapsulation from './ppp/LCPEncapsulation';
 import { ControlCode } from './ppp/ControlProtocol';
 import { encode } from './encodingUtil';
+import { PcapPacketDirection } from './PcapWriter';
+
+jest.mock('./PcapWriter');
 
 let intf: Interface;
 let sink: BufferSink;
@@ -197,4 +200,26 @@ describe('getLink()', () => {
   });
 
   // TODO: check ping failure triggers LCP restart
+});
+
+describe('pcap writing', () => {
+  let packetWriteSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    intf = Interface.create(sink, '/tmp/not/a/real/path');
+    // eslint-disable-next-line
+    packetWriteSpy = jest.spyOn((intf as any).pcapWriter, 'writePacket');
+  });
+
+  it('writes a received packet', () => {
+    const packet = PPPFrame.build(0xabcd, encode('hello recv!'));
+    intf.write(packet);
+    expect(packetWriteSpy).toBeCalledWith(PcapPacketDirection.IN, packet);
+  });
+
+  it('writes a sent packet', () => {
+    const packet = PPPFrame.build(0xabcd, encode('hello send!'));
+    intf.sendPacket(0xabcd, encode('hello send!'));
+    expect(packetWriteSpy).toBeCalledWith(PcapPacketDirection.OUT, packet);
+  });
 });
