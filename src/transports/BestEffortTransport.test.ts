@@ -112,7 +112,7 @@ it('restarts transport if ping fails', async () => {
 
   expect(ncpRestartSpy).not.toBeCalled();
   jest.runAllTimers();
-  const waitForEventLoopTick = new Promise(resolve => setImmediate(resolve));
+  const waitForEventLoopTick = new Promise((resolve) => setImmediate(resolve));
   jest.runAllTimers();
   await waitForEventLoopTick;
   expect(ncpRestartSpy).toBeCalled();

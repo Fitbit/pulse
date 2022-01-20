@@ -14,3 +14,4 @@ export interface TransportConstructor {
 }
 
 export { default as BestEffortTransport } from './BestEffortTransport';
+export { default as ReliableTransport } from './ReliableTransport';

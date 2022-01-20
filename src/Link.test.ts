@@ -7,6 +7,7 @@ import { SocketLike } from './Socket';
 
 jest.mock('./Interface');
 jest.mock('./transports/BestEffortTransport');
+jest.mock('./transports/ReliableTransport');
 
 let intf: Interface;
 let link: Link;
