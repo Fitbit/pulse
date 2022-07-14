@@ -1,27 +1,26 @@
 import EventEmitter from 'events';
 import Interface from './Interface';
-import Transport, {
-  BestEffortTransport,
-  ReliableTransport,
-  TransportConstructor,
-} from './transports';
+import Transport, { transports, TransportType } from './transports';
 import { SocketLike } from './Socket';
 
 export default class Link extends EventEmitter {
-  private static availableTransports: { [name: string]: TransportConstructor } =
-    {
-      bestEffort: BestEffortTransport,
-      reliable: ReliableTransport,
-    };
-
   public closed = false;
   private transports: { [name: string]: Transport } = {};
 
-  constructor(intf: Interface, mtu: number) {
+  constructor(
+    intf: Interface,
+    mtu: number,
+    requestedTransports?: TransportType[],
+  ) {
     super();
-    for (const [name, transportCtor] of Object.entries(
-      Link.availableTransports,
-    )) {
+    for (const [name, transportCtor] of Object.entries(transports)) {
+      if (
+        requestedTransports &&
+        !requestedTransports.includes(name as TransportType)
+      ) {
+        continue;
+      }
+
       this.transports[name] = new transportCtor(intf, mtu);
     }
   }

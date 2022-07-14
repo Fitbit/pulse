@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Interface from './Interface';
 import Link from './Link';
-import Transport, { TransportConstructor } from './transports';
+import Transport, { TransportConstructor, transports } from './transports';
 import { SocketLike } from './Socket';
 
 jest.mock('./Interface');
@@ -33,10 +33,7 @@ beforeEach(() => {
   intf = new Interface();
 
   // eslint-disable-next-line
-  const transports = (Link as any).availableTransports as {
-    [name: string]: TransportConstructor;
-  };
-  transports.fake = FakeTransport;
+  (transports as any).fake = FakeTransport;
 
   link = new Link(intf, mtu);
   // eslint-disable-next-line

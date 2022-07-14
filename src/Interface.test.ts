@@ -206,7 +206,7 @@ describe('pcap writing', () => {
   let packetWriteSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    intf = Interface.create(sink, '/tmp/not/a/real/path');
+    intf = Interface.create(sink, { pcapPath: '/tmp/not/a/real/path' });
     // eslint-disable-next-line
     packetWriteSpy = jest.spyOn((intf as any).pcapWriter, 'writePacket');
   });

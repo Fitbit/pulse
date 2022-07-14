@@ -89,7 +89,6 @@ export default class PulseControlMessageProtocol extends EventEmitter {
       case PCMPCode.EchoReply:
         if (this.pingPromiseResolve) this.pingPromiseResolve();
         this.resetPingTimer();
-        console.log(`PCMP Echo-Reply: ${packet.information.toString('hex')}`);
         break;
       case PCMPCode.PortClosed:
         if (packet.information.byteLength === 2) {

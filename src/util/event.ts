@@ -1,6 +1,7 @@
 export default class Event {
   flag!: Promise<boolean>;
   flagResolve!: (val: true) => void;
+  timers: NodeJS.Timer[] = [];
 
   constructor() {
     this.clear();
@@ -13,6 +14,8 @@ export default class Event {
   }
 
   set(): void {
+    this.timers.map(clearTimeout);
+    this.timers = [];
     if (this.flagResolve) this.flagResolve(true);
   }
 
@@ -22,7 +25,7 @@ export default class Event {
     return Promise.race([
       this.flag,
       new Promise<boolean>((resolve) =>
-        setTimeout(() => resolve(false), timeout),
+        this.timers.push(setTimeout(() => resolve(false), timeout)),
       ),
     ]);
   }

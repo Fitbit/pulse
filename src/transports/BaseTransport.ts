@@ -109,10 +109,6 @@ export default abstract class BaseTransport implements Transport {
   }
 
   protected onPortClosed(port: number): void {
-    console.log(
-      `Remote peer says port 0x${port.toString(16)} is closed; closing socket`,
-    );
-
     try {
       this.sockets[port].close();
     } catch {

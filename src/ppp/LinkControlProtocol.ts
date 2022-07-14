@@ -127,7 +127,7 @@ export default class LinkControlProtocol extends ControlProtocol {
       // Echo-Request packet MUST be transmitted with the
       // Magic-Number field set to zero. An Echo-Request with
       // any other value must therefore be malformed.
-      console.log(
+      console.warn(
         `Received malformed Echo-Request packet: packet contains nonzero Magic-Number value 0x${request.magicNumber.toString(
           8,
         )}`,
@@ -161,7 +161,7 @@ export default class LinkControlProtocol extends ControlProtocol {
       // Echo-Reply packet MUST be transmitted with the
       // Magic-Number field set to zero. An Echo-Reply with
       // any other value must therefore be malformed.
-      console.log(
+      console.warn(
         `Received malformed Echo-Reply packet: packet contains nonzero Magic-Number value 0x${reply.magicNumber.toString(
           8,
         )}`,
@@ -197,12 +197,10 @@ export default class LinkControlProtocol extends ControlProtocol {
   }
 
   protected thisLayerUp(): void {
-    console.log(`[${this.displayName}] layer up`);
     this.emit('linkUp');
   }
 
   protected thisLayerDown(): void {
-    console.log(`[${this.displayName}] layer down`);
     if (this.pingTimer) {
       if (this.pingPromiseReject) {
         this.pingPromiseReject(new Error('Ping failed: layer down'));
@@ -213,12 +211,10 @@ export default class LinkControlProtocol extends ControlProtocol {
   }
 
   protected thisLayerStarted(): void {
-    console.log(`[${this.displayName}] layer started`);
     this.emit('linkStarted');
   }
 
   protected thisLayerFinished(): void {
-    console.log(`[${this.displayName}] layer finished`);
     this.emit('linkFinished');
   }
 }

@@ -4,6 +4,7 @@ import InterfaceSocket from './InterfaceSocket';
 import Link from './Link';
 import LinkControlProtocol from './ppp/LinkControlProtocol';
 import PPPFrame from './ppp/PPPFrame';
+import { TransportType } from './transports';
 import Event from './util/event';
 
 import { FrameDecoder } from './framing/decoder';
@@ -11,9 +12,19 @@ import { FrameEncoder } from './framing/encoder';
 import { FrameSplitter } from './framing/splitter';
 import PcapWriter, { PcapPacketDirection } from './PcapWriter';
 
+export interface InterfaceOptions {
+  // A path to write a pcap file with all data across the underlying stream
+  pcapPath?: string;
+
+  // Array of transport names to be configured
+  requestedTransports?: TransportType[];
+}
+
 export default class Interface extends stream.Duplex {
-  static create(phy: stream.Duplex, pcapPath?: string): Interface {
-    const intf = new Interface(pcapPath);
+  private requestedTransports?: TransportType[];
+
+  static create(phy: stream.Duplex, options?: InterfaceOptions): Interface {
+    const intf = new Interface(options);
     const splitter = new FrameSplitter();
     const decoder = new FrameDecoder();
     const encoder = new FrameEncoder();
@@ -25,11 +36,16 @@ export default class Interface extends stream.Duplex {
     return intf;
   }
 
-  constructor(pcapPath?: string) {
+  constructor(options?: InterfaceOptions) {
     super({ objectMode: true, allowHalfOpen: false });
 
-    if (pcapPath) {
-      this.pcapWriter = new PcapWriter(pcapPath, PcapWriter.linkTypePPPWithDir);
+    this.requestedTransports = options?.requestedTransports;
+
+    if (options?.pcapPath) {
+      this.pcapWriter = new PcapWriter(
+        options.pcapPath,
+        PcapWriter.linkTypePPPWithDir,
+      );
     }
 
     this.lcp.addListener('linkUp', this.onLinkUp.bind(this));
@@ -65,12 +81,6 @@ export default class Interface extends stream.Duplex {
       return;
     }
 
-    console.log(
-      `[PHY recv] [protocol:0x${frame.protocol.toString(
-        16,
-      )}] ${frame.information.toString('hex')}`,
-    );
-
     const socket: InterfaceSocket | undefined = this.sockets[frame.protocol];
     if (socket !== undefined) {
       socket.handlePacket(frame.information);
@@ -104,11 +114,7 @@ export default class Interface extends stream.Duplex {
 
   sendPacket(protocol: number, packet: Buffer): void {
     if (this.closed) throw new Error('I/O operation on closed interface');
-    console.log(
-      `[PHY send] [protocol:0x${protocol.toString(16)}] ${packet.toString(
-        'hex',
-      )}`,
-    );
+
     const datagram = PPPFrame.build(protocol, packet);
     if (this.pcapWriter) {
       this.pcapWriter.writePacket(PcapPacketDirection.OUT, datagram);
@@ -141,7 +147,7 @@ export default class Interface extends stream.Duplex {
 
   private handlePingSuccess(): void {
     const mtu = 500;
-    this.link = new Link(this, mtu);
+    this.link = new Link(this, mtu, this.requestedTransports);
     this.linkAvailable.set();
   }
 

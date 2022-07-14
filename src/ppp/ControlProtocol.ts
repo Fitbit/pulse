@@ -83,7 +83,6 @@ export default class ControlProtocol extends EventEmitter {
   }
 
   private maybeStopRestartTimer(): void {
-    console.log(`[${this.displayName}] entered state: ${this.state}`);
     if (
       [
         ControlProtocolState.Initial,
@@ -528,11 +527,8 @@ export default class ControlProtocol extends EventEmitter {
   // Control Protocol state machine.
 
   public restart(): void {
-    console.log('restarting... down');
     this._down();
-    console.log('restarting... up');
     this._up();
-    console.log('restarting... done');
   }
 
   public up(socket: InterfaceSocket): void {
@@ -612,7 +608,6 @@ export default class ControlProtocol extends EventEmitter {
   }
 
   private restartTimerExpired(): void {
-    console.log(`[${this.displayName}] restart (timeout)`);
     if (this.restartCount > 0) {
       this.timeoutRetry();
     } else {
@@ -761,14 +756,14 @@ export default class ControlProtocol extends EventEmitter {
       this.state === ControlProtocolState.Initial ||
       this.state === ControlProtocolState.Starting
     ) {
-      console.log(`Received unexpected packet in state ${this.state}`);
+      console.warn(`Received unexpected packet in state ${this.state}`);
     }
 
     let encapsulation: LCPEncapsulation;
     try {
       encapsulation = LCPEncapsulation.parse(packet);
     } catch {
-      console.error('Packet parsing failed');
+      console.warn('Packet parsing failed');
       return;
     }
 
@@ -817,7 +812,7 @@ export default class ControlProtocol extends EventEmitter {
       } else {
         if (encapsulation.identifier !== this.configureRequestIdentifier) {
           // Invalid packet; silently discard
-          console.log(
+          console.warn(
             `Received response packet with mismatched identifier: expected ${this.configureRequestIdentifier} received: ${encapsulation.identifier}`,
           );
           return;

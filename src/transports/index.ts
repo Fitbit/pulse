@@ -13,5 +13,13 @@ export interface TransportConstructor {
   new (intf: Interface, mtu: number): Transport;
 }
 
-export { default as BestEffortTransport } from './BestEffortTransport';
-export { default as ReliableTransport } from './ReliableTransport';
+import BestEffortTransport from './BestEffortTransport';
+import ReliableTransport from './ReliableTransport';
+
+export { BestEffortTransport, ReliableTransport };
+
+export const transports = {
+  bestEffort: BestEffortTransport,
+  reliable: ReliableTransport,
+};
+export type TransportType = keyof typeof transports;
