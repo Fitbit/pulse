@@ -149,7 +149,7 @@ it('throws if sending on a closed interface', async () => {
   jest.runAllTimers();
   await closePromise;
 
-  expect(intf.closed).toEqual(true);
+  expect(intf.isClosed).toEqual(true);
   expect(() => intf.sendPacket(0x8889, Buffer.from('data'))).toThrowError(
     'I/O operation on closed interface',
   );

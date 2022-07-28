@@ -73,7 +73,7 @@ export default class Interface extends stream.Duplex {
     });
   }
 
-  public closed = false;
+  public isClosed = false;
   private sockets: Record<number, InterfaceSocket> = {};
   private lcp = new LinkControlProtocol(this);
   private link?: Link;
@@ -129,7 +129,7 @@ export default class Interface extends stream.Duplex {
   }
 
   sendPacket(protocol: number, packet: Buffer): void {
-    if (this.closed) throw new Error('I/O operation on closed interface');
+    if (this.isClosed) throw new Error('I/O operation on closed interface');
 
     const datagram = PPPFrame.build(protocol, packet);
     if (this.pcapWriter) {
@@ -145,7 +145,7 @@ export default class Interface extends stream.Duplex {
   }
 
   public async close(): Promise<void> {
-    if (this.closed) return;
+    if (this.isClosed) return;
     await this.lcp.shutdown();
     this.closeAllSockets();
     this.down();
@@ -155,7 +155,7 @@ export default class Interface extends stream.Duplex {
     The lower layer (iostream) is down. Bring down the interface.
   */
   private down(): void {
-    this.closed = true;
+    this.isClosed = true;
     this.closeAllSockets();
     this.lcp.down();
     this.destroy();
@@ -189,7 +189,7 @@ export default class Interface extends stream.Duplex {
   }
 
   public async getLink(timeout = 60000): Promise<Link> {
-    if (this.closed) {
+    if (this.isClosed) {
       return Promise.reject(new Error('No link available on closed interface'));
     }
 
