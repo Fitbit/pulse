@@ -122,7 +122,7 @@ export default class Interface extends stream.Duplex {
   }
 
   /*
-    Used by InterfaceSocket objets to unregister themselves when closing.
+    Used by InterfaceSocket objects to unregister themselves when closing.
   */
   unregisterSocket(protocol: number): void {
     delete this.sockets[protocol];
